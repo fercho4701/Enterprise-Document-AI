@@ -1,5 +1,4 @@
 import streamlit as st
-import fitz
 import chromadb
 import ollama
 import os
@@ -7,32 +6,25 @@ import os
 from sentence_transformers import SentenceTransformer
 
 
-PDF_PATH = "data/pdfs/manual.pdf"
-
-IMAGE_FOLDER = "data/images"
-
-
+CHROMA_PATH = "data/chroma_db"
 
 
 st.set_page_config(
-    page_title="Multimodal RAG",
+    page_title="Chat PDF",
     layout="wide"
 )
 
-st.title("📚 Multimodal RAG Chat")
-
-st.write(
-    "Haz preguntas sobre el documento PDF"
+st.title(
+    "📚🤖 Chat PDF"
 )
-
 
 
 client = chromadb.PersistentClient(
-    path="data/chroma_db"
+    path=CHROMA_PATH
 )
 
-collection = client.get_or_create_collection(
-    name="multimodal_rag"
+collection = client.get_collection(
+    "multimodal_rag"
 )
 
 model = SentenceTransformer(
@@ -40,86 +32,233 @@ model = SentenceTransformer(
 )
 
 
-
 question = st.text_input(
-    "Escribe tu pregunta:"
+    "Pregunta:"
 )
-
-
 
 
 if question:
 
-   
-    query_embedding = model.encode(
+    query = model.encode(
         [question]
     ).tolist()
 
-    
     results = collection.query(
-        query_embeddings=query_embedding,
-        n_results=2
+
+        query_embeddings=query,
+
+        n_results=1
     )
 
-    context = "\n".join(
-        results["documents"][0]
-    )
+    context = results[
+        "documents"
+    ][0][0]
 
-    metadata = results["metadatas"][0]
+    metadata = results[
+        "metadatas"
+    ][0][0]
 
-   
+
     prompt = f"""
-    Responde usando SOLO el contexto.
+Responde SOLO usando el contexto.
 
-    CONTEXTO:
-    {context}
+CONTEXTO:
+{context}
 
-    PREGUNTA:
-    {question}
+PREGUNTA:
+{question}
+"""
 
-    RESPUESTA:
-    """
 
     response = ollama.chat(
+
         model="llama3",
+
         messages=[
+
             {
-                "role": "user",
-                "content": prompt
+
+                "role":"user",
+
+                "content":prompt
+
             }
+
         ]
+
     )
 
-    answer = response["message"]["content"]
+
+    answer = response[
+        "message"
+    ][
+        "content"
+    ]
 
 
+    st.subheader(
+        "Respuesta"
+    )
 
-    st.subheader("🧠 Respuesta")
+    st.write(
+        answer
+    )
 
-    st.write(answer)
 
-   
+    st.subheader(
+        "Referencia"
+    )
 
-    st.subheader("📄 Referencias")
+    st.write(
+        f"Página {metadata['page']}"
+    )
 
-    for item in metadata:
 
-        st.write(f"Página: {item['page']}")
+    show = any(
 
-        st.write(f"Documento: {item['document']}")
+        x in question.lower()
 
-        # MOSTRAR IMÁGENES
-        if item["images"]:
+        for x in [
 
-            image_paths = item["images"].split(",")
+            "imagen",
 
-            for image_path in image_paths:
+            "mostrar",
 
-                image_path = image_path.strip()
+            "muestra"
 
-                if os.path.exists(image_path):
+        ]
 
-                    st.image(
-                        image_path,
-                        width=400
+    )
+
+
+    if show:
+
+     images = []
+
+    current_page = int(
+        metadata["page"]
+    )
+
+    for item in results["metadatas"][0]:
+
+        if (
+            item["images"]
+            and
+            item["images"].strip()
+        ):
+
+            images.extend(
+                item["images"].split("|")
+            )
+
+
+    if not images:
+
+        # buscar imágenes cercanas
+
+        for page_offset in range(
+            1,
+            6
+        ):
+
+            page_before = (
+                current_page
+                -
+                page_offset
+            )
+
+            page_after = (
+                current_page
+                +
+                page_offset
+            )
+
+            nearby = collection.get()
+
+            for meta in nearby[
+                "metadatas"
+            ]:
+
+                try:
+
+                    page_num = int(
+                        meta["page"]
                     )
+
+                    if (
+                        page_num
+                        in [
+                            page_before,
+                            page_after
+                        ]
+                        and
+                        meta["images"]
+                    ):
+
+                        images.extend(
+                            meta[
+                                "images"
+                            ].split("|")
+                        )
+
+                except:
+                    pass
+
+
+    st.subheader(
+        "🖼️ Imágenes"
+    )
+
+    shown = set()
+
+    for img in images:
+
+        img = img.strip()
+
+        if (
+            img
+            and
+            os.path.exists(
+                img
+            )
+            and
+            img not in shown
+        ):
+
+            st.image(
+                img,
+                width=150
+            )
+
+            shown.add(
+                img
+            )
+
+
+    if not shown:
+
+        st.warning(
+            "No se encontraron imágenes para esta sección del PDF."
+        )
+
+        st.subheader(
+            "Imágenes"
+        )
+
+
+        for img in images:
+
+            if (
+
+                img
+                and
+                os.path.exists(
+                    img
+                )
+
+            ):
+
+                st.image(
+                    img,
+                    width=700
+                )

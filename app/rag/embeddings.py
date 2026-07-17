@@ -14,8 +14,7 @@ sentences = [
 embeddings = model.encode(sentences)
 
 # Mostrar resultados
-for i, embedding in enumerate(embeddings):
-
+for i, embedding in enumerate(embeddings): 
     print("\n" + "=" * 50)
     print(f"TEXTO: {sentences[i]}")
     print(f"VECTOR (primeros 10 valores):")

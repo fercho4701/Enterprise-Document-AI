@@ -6,14 +6,17 @@ import os
 from sentence_transformers import SentenceTransformer
 
 
-
 PDF_PATH = "data/pdfs/manual.pdf"
-
 IMAGE_FOLDER = "data/images"
+CHROMA_PATH = "data/chroma_db"
 
 os.makedirs(IMAGE_FOLDER, exist_ok=True)
+os.makedirs(CHROMA_PATH, exist_ok=True)
 
 
+# ==========================
+# EXTRAER TEXTO + IMÁGENES
+# ==========================
 
 def extract_multimodal_data(pdf_path):
 
@@ -23,12 +26,8 @@ def extract_multimodal_data(pdf_path):
 
     for page_number, page in enumerate(doc):
 
-        print(f"Procesando página {page_number + 1}")
-
-       
         text = page.get_text()
 
-       
         image_list = page.get_images(full=True)
 
         saved_images = []
@@ -52,26 +51,41 @@ def extract_multimodal_data(pdf_path):
                 image_name
             )
 
-            with open(image_path, "wb") as f:
+            with open(
+                image_path,
+                "wb"
+            ) as f:
 
-                f.write(image_bytes)
+                f.write(
+                    image_bytes
+                )
 
-            saved_images.append(image_path)
+            saved_images.append(
+                image_path
+            )
 
-        page_info = {
+        pages_data.append({
+
             "page": page_number + 1,
-            "text": text,
-            "images": saved_images
-        }
 
-        pages_data.append(page_info)
+            "text": text,
+
+            "images": saved_images
+
+        })
 
     return pages_data
 
 
+# ==========================
+# CHUNKING
+# ==========================
 
-
-def chunk_text(text, chunk_size=500, overlap=100):
+def chunk_text(
+    text,
+    chunk_size=500,
+    overlap=100
+):
 
     chunks = []
 
@@ -81,127 +95,114 @@ def chunk_text(text, chunk_size=500, overlap=100):
 
         end = start + chunk_size
 
-        chunk = text[start:end]
+        chunks.append(
+            text[start:end]
+        )
 
-        chunks.append(chunk)
-
-        start += chunk_size - overlap
+        start += (
+            chunk_size
+            -
+            overlap
+        )
 
     return chunks
 
 
+# ==========================
+# CREAR CHROMA PERSISTENTE
+# ==========================
 
-pages_data = extract_multimodal_data(PDF_PATH)
+client = chromadb.PersistentClient(
+    path=CHROMA_PATH
+)
 
+try:
+    client.delete_collection(
+        "multimodal_rag"
+    )
+except:
+    pass
 
-
-client = chromadb.Client()
 
 collection = client.create_collection(
     name="multimodal_rag"
 )
+
 
 model = SentenceTransformer(
     "all-MiniLM-L6-v2"
 )
 
 
-all_chunks = []
+# ==========================
+# EXTRAER
+# ==========================
+
+pages_data = extract_multimodal_data(
+    PDF_PATH
+)
+
+
+all_docs = []
 all_embeddings = []
 all_ids = []
-all_metadatas = []
+all_metadata = []
 
-chunk_counter = 0
+counter = 0
 
-for page_data in pages_data:
 
-    chunks = chunk_text(page_data["text"])
+for page in pages_data:
+
+    chunks = chunk_text(
+        page["text"]
+    )
 
     for chunk in chunks:
 
-        embedding = model.encode(chunk).tolist()
+        embedding = model.encode(
+            chunk
+        ).tolist()
 
-        chunk_id = f"chunk_{chunk_counter}"
+        all_docs.append(
+            chunk
+        )
 
-        metadata = {
-            "page": page_data["page"],
+        all_embeddings.append(
+            embedding
+        )
+
+        all_ids.append(
+            f"chunk_{counter}"
+        )
+
+        all_metadata.append({
+
+            "page": str(
+                page["page"]
+            ),
+
             "document": PDF_PATH,
-            "images": ", ".join(page_data["images"])
-        }
 
-        all_chunks.append(chunk)
+            "images": "|".join(
+                page["images"]
+            )
 
-        all_embeddings.append(embedding)
+        })
 
-        all_ids.append(chunk_id)
-
-        all_metadatas.append(metadata)
-
-        chunk_counter += 1
+        counter += 1
 
 
 collection.add(
-    documents=all_chunks,
+
+    documents=all_docs,
+
     embeddings=all_embeddings,
+
     ids=all_ids,
-    metadatas=all_metadatas
+
+    metadatas=all_metadata
 )
 
-print("\nChunks multimodales guardados.")
-
-
-
-question = input("\nHaz una pregunta: ")
-
-
-
-query_embedding = model.encode(
-    [question]
-).tolist()
-
-results = collection.query(
-    query_embeddings=query_embedding,
-    n_results=2
+print(
+    "\nBase creada correctamente."
 )
-
-context = "\n".join(
-    results["documents"][0]
-)
-
-metadata = results["metadatas"][0]
-
-
-
-print("\nMETADATA RECUPERADA:\n")
-
-for item in metadata:
-
-    print(item)
-
-
-prompt = f"""
-Responde la pregunta usando SOLO la información
-del contexto proporcionado.
-
-CONTEXTO:
-{context}
-
-PREGUNTA:
-{question}
-
-RESPUESTA:
-"""
-
-response = ollama.chat(
-    model="llama3",
-    messages=[
-        {
-            "role": "user",
-            "content": prompt
-        }
-    ]
-)
-
-print("\nRESPUESTA FINAL:\n")
-
-print(response["message"]["content"])
