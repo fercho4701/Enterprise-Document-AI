@@ -1,85 +1,128 @@
-# Multimodal RAG System
+# Enterprise Document AI
 
-Sistema RAG (Retrieval-Augmented Generation) multimodal capaz de procesar documentos PDF técnicos, extraer texto e imágenes, y responder preguntas utilizando contexto semántico y visual.
-
----
-
-# Características
-
-- Procesamiento de PDFs técnicos
-- Extracción de texto e imágenes
-- Chunking inteligente
-- Embeddings semánticos
-- Vector Database con ChromaDB
-- Retrieval contextual
-- Generación de respuestas con Llama3 (Ollama)
-- Asociación texto ↔ imagen
-- Interfaz interactiva con Streamlit
+An AI-powered document assistant capable of processing enterprise PDF documents, extracting text and images, building a semantic knowledge base, and answering questions using Retrieval-Augmented Generation (RAG).
 
 ---
 
-# Arquitectura
+## Features
 
-PDF → Extracción → Chunking → Embeddings → ChromaDB → Retrieval → LLM → Respuesta
+- 📄 Upload enterprise PDF documents
+- 🤖 Ask questions in natural language
+- 🧠 Semantic search using Sentence Transformers
+- ⚡ Answer generation powered by Groq LLM
+- 🗄 Vector database with ChromaDB
+- 🖼 Automatic image extraction from PDFs
+- 📚 Context-aware Retrieval-Augmented Generation (RAG)
+- 🌐 Interactive Streamlit interface
 
 ---
 
-# Tecnologías utilizadas
+## Architecture
 
-## Backend
+```text
+PDF
+ │
+ ▼
+Text & Image Extraction
+ │
+ ▼
+Chunking
+ │
+ ▼
+Sentence Transformers
+ │
+ ▼
+ChromaDB
+ │
+ ▼
+Semantic Retrieval
+ │
+ ▼
+Groq LLM
+ │
+ ▼
+Answer
+```
+
+---
+
+## Technologies
+
+### Backend
+
 - Python
-- Ollama
-- Llama3
+- Groq API
 - ChromaDB
-- SentenceTransformers
+- Sentence Transformers
 
-## Procesamiento PDF
+### PDF Processing
+
 - PyMuPDF (fitz)
 
-## Frontend
+### Frontend
+
 - Streamlit
+
+### AI Model
+
+- Llama 3.3 70B Versatile (Groq)
 
 ---
 
-# Estructura del proyecto
+## Project Structure
 
-```bash
+```text
 app/
 │
-├── ingestion/
-├── rag/
-├── ui/
+├── assets/
 │
+└── ui/
+    ├── streamlit_app.py
+    ├── document_processor.py
+    └── llm_service.py
+
 data/
 │
 ├── chroma_db/
 ├── images/
-├── pdfs/
+└── pdfs/
+
+requirements.txt
+.env.example
+README.md
 ```
 
-# Instalación
+---
 
-## 1. Clonar repositorio
+## Installation
+
+### Clone the repository
 
 ```bash
-git clone URL_DEL_REPOSITORIO
+git clone https://github.com/fercho4701/IA-PDF.git
 ```
 
-## 2. Crear entorno virtual
+### Create virtual environment
 
 ```bash
 python -m venv venv
 ```
 
-## 3. Activar entorno virtual
+### Activate environment
 
-### Windows
+Windows
 
 ```bash
-.\venv\Scripts\Activate
+venv\Scripts\activate
 ```
 
-## 4. Instalar dependencias
+Linux / macOS
+
+```bash
+source venv/bin/activate
+```
+
+### Install dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -87,31 +130,17 @@ pip install -r requirements.txt
 
 ---
 
-# Instalar Ollama
+## Configure Environment Variables
 
-Descargar desde:
+Create a `.env` file based on `.env.example`
 
-https://ollama.com/download
-
----
-
-# Descargar modelo
-
-```bash
-ollama run llama3
+```text
+GROQ_API_KEY=your_api_key_here
 ```
 
 ---
 
-# Ejecutar pipeline multimodal
-
-```bash
-python app/rag/multimodal_pipeline.py
-```
-
----
-
-# Ejecutar interfaz
+## Run the application
 
 ```bash
 streamlit run app/ui/streamlit_app.py
@@ -119,36 +148,50 @@ streamlit run app/ui/streamlit_app.py
 
 ---
 
-# Ejemplo de preguntas
+## Example Questions
 
-- ¿Cómo funciona el sensor térmico?
-- ¿Qué dice el documento sobre teoría de sistemas?
-- ¿Qué muestra el diagrama principal?
-
----
-
-# Características multimodales
-
-El sistema:
-- Extrae imágenes desde PDFs
-- Relaciona texto con imágenes cercanas
-- Devuelve metadata:
-  - documento
-  - página
-  - imágenes asociadas
+- What is this document about?
+- Summarize Chapter 3.
+- Who is Pedro Pablo Gaviota?
+- Show me the image related to this section.
+- What does the document say about artificial intelligence?
 
 ---
 
-# Futuras mejoras
+## Current Capabilities
 
-- OCR avanzado
-- Soporte multi-documento
-- Historial conversacional
-- Deploy cloud
-- Mejor retrieval visual
+- Semantic document search
+- Context-aware question answering
+- Automatic PDF processing
+- Image extraction
+- Interactive chat interface
+- Enterprise document analysis
 
 ---
 
-# Autor
+## Roadmap
 
-Luis Fernando González Molina
+- Hybrid Search
+- Cross-Encoder Re-ranking
+- Multi-document support
+- Conversation memory
+- Cloud deployment
+- Source citations
+- OCR support
+
+---
+
+## Author
+
+**Luis Fernando González Molina**
+
+Systems Engineer
+
+GitHub:
+https://github.com/fercho4701
+
+---
+
+## License
+
+This project is licensed under the MIT License.
