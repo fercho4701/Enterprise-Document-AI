@@ -21,7 +21,7 @@ if "processed_file" not in st.session_state:
 
 # Encabezado con Logo y Título
 try:
-    logo = Image.open("app/assets/logo.png")
+    logo = Image.open("app/assets/logo.PNG")
     col1, col2 = st.columns([1, 8])
     with col1:
         st.image(logo, width=100)
