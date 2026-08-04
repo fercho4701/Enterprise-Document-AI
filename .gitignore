@@ -1,6 +1,28 @@
+# Virtual Environment
 venv/
+
+# Python
 __pycache__/
 *.pyc
+
+# Environment variables
 .env
-data/images/
+
+# Chroma Database
 data/chroma_db/
+
+# Extracted images
+data/images/
+
+# Uploaded PDFs
+data/pdfs/
+
+# Streamlit cache
+.streamlit/
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
