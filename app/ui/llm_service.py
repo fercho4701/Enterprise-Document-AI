@@ -4,7 +4,6 @@ from groq import Groq
 
 load_dotenv()
 
-print("API:", os.getenv("GROQ_API_KEY"))
 
 client = Groq(
     api_key=os.getenv("GROQ_API_KEY")
@@ -13,7 +12,7 @@ client = Groq(
 def generate_answer(prompt):
 
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="openai/gpt-oss-120b",
         messages=[
             {
                 "role": "user",
